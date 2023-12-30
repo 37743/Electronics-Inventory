@@ -26,15 +26,20 @@ def float_effect(widget, yn, d):
     anim.start(widget)
     return
 
-class Landing(Screen, FloatLayout):
+# Events
+def about_released(instance):
+    change_to_screen(screen="About Us Page")
+    return
+
+class Login(Screen, FloatLayout):
     def _update_bg(self, instance, value):
         self.bg.pos = instance.pos
         self.bg.size = instance.size
 
     def __init__(self, **kwargs):
-        super(Landing, self).__init__(**kwargs)
+        super(Login, self).__init__(**kwargs)
         with self.canvas.before:
-            self.bg = Rectangle(source = "app/assets/landing-background.png",
+            self.bg = Rectangle(source = "app/assets/background.png",
                                 size = self.size,
                                 pos = self.pos)
 
@@ -63,6 +68,7 @@ class Landing(Screen, FloatLayout):
                             "app/assets/invis-button.png",
                             background_down=
                             "app/assets/invis-button-down.png")
+        aboutusbut.bind(on_release=about_released)
         self.taskbar.add_widget(aboutusbut)
 
         supportbut = Button(text="[b] SUPPORT [/b]", color = "#2f2f2f",
@@ -158,3 +164,5 @@ class Landing(Screen, FloatLayout):
                              color = "##6ee58b",
                              pos_hint={"center_x": .5, "center_y": .04}, font_size=11)
         self.add_widget(self.footer)
+
+        # Functions
