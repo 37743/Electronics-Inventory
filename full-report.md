@@ -249,7 +249,7 @@ Reconcile inventory records with financial records for accounting personnel.
 - An accounting personnel generates a report on inventory costs at the end of the month.
 - An executive reviews a report on the overall performance of the business.
 
-### 4. Acceptance Criteria
+### 5. Acceptance Criteria
 
 <b> The electronics inventory management system must meet the following acceptance criteria: </b>
 
@@ -270,7 +270,7 @@ Reconcile inventory records with financial records for accounting personnel.
 <!-- <object data="diagrams/DFD Level 1.pdf" type="application/pdf" width="700px" height="700px"> </object> -->
 
 ### Level 2 - Data Flow Diagram (DFD 2)
-<b> Assigned: </b> Yousef Gomaa, Mohamed Ayman <br>
+<b> Assigned: </b> Yousef Gomaa, Mahamed Ayman <br>
 2nd Level DFD for Manage User Data Process Detailed
 ![Alt text](<diagrams/Manage User Data Process.png>)
 <br>
