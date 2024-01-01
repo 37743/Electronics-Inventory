@@ -8,10 +8,10 @@
      needed to be used globally.
      In the event of failure, kindly refer to
      the version info stated in the deployed app.'''
-settings = {"version": "0.0.1",
-            "day": 30,
-            "month": 12,
-            "year": 2023}
+settings = {"version": "0.1.1",
+            "day": 1,
+            "month": 1,
+            "year": 2024}
 
 class VersionInfo():
     ''' Class that contains all related info regarding the deployment.'''
@@ -26,4 +26,4 @@ class VersionInfo():
     def get_db():
         ''' Get current name of database,
         TODO: defaulted to "testdb" and to-be changed later.'''
-        return "hr"
+        return str(None)

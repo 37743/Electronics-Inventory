@@ -8,12 +8,11 @@ from kivy.app import App
 from kivy.uix.label import Label
 from kivy.uix.screenmanager import Screen
 from kivy.uix.floatlayout import FloatLayout
-from kivy.uix.gridlayout import GridLayout
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.graphics import Rectangle
-from kivy.uix.popup import Popup 
+from app.scripts.support import Support
 from app.config.settings import VersionInfo
 from kivy.core.window import Window
 
@@ -24,6 +23,14 @@ def change_to_screen(*args, screen):
 # Events
 def loginpg_released(instance):
     change_to_screen(screen="Login Page")
+    return
+
+def signup_released(instance):
+    change_to_screen(screen="Signup Page")
+    return
+
+def support_released(instance):
+    Support()
     return
 
 class About(Screen, FloatLayout):
@@ -75,6 +82,7 @@ class About(Screen, FloatLayout):
                             "app/assets/invis-button.png",
                             background_down=
                             "app/assets/invis-button-down.png")
+        supportbut.bind(on_release=support_released)
         self.taskbar.add_widget(supportbut)
         
         self.add_widget(self.taskbar)
@@ -86,6 +94,7 @@ class About(Screen, FloatLayout):
                              font_size=11)
         self.add_widget(self.footer)
 
+# TODO: Fix the scrolling
 class Scroll(ScrollView, FloatLayout):
     def __init__(self, **kwargs):
         super(Scroll, self).__init__(**kwargs)
@@ -94,8 +103,17 @@ class Scroll(ScrollView, FloatLayout):
         introlayout = FloatLayout()
         intropanel = Image(source="app/assets/intro.png", size_hint=(1,1))
         introlayout.add_widget(intropanel)
+        welcome = Label(text="[b] Electronics Inventory Management System [/b]",
+                             color = "#21d74d", markup = True,
+                             halign="center",
+                             valign="center",
+                             size_hint=(1,1),
+                             pos_hint={"center_x": .67, "center_y": .85},
+                             font_size=26)
+        introlayout.add_widget(welcome)
         intro1 = Label(text="[b] \"A system for managing the inventory of electronic\n devices through an website interface.\" [/b]",
                              color = "#ffffff", markup = True,
+                             size_hint=(1,1),
                              pos_hint={"center_x": .63, "center_y": .7},
                              font_size=18)
         introlayout.add_widget(intro1)
@@ -106,6 +124,7 @@ class Scroll(ScrollView, FloatLayout):
                         It aims to streamline inventory-related operations, enhance the sales process, improve\n\
                        inventory accuracy, and provide valuable insights for data-driven decision-making.",
                              color = "#ffffff",
+                             size_hint=(1,1),
                              halign='justify',
                              pos_hint={"center_x": .7, "center_y": .5},
                              font_size=14)
@@ -113,6 +132,7 @@ class Scroll(ScrollView, FloatLayout):
         intro3 = Label(text="[b] If you wish to sign-up for our services, [u] kindly press the button\n\
                         below and follow the instructions given. [/u] [/b]",
                              color = "#ffffff",
+                             size_hint=(1,1),
                              halign='justify',
                              markup = True,
                              pos_hint={"center_x": .632, "center_y": .35},
@@ -127,6 +147,7 @@ class Scroll(ScrollView, FloatLayout):
                             "app/assets/button.png",
                             background_down=
                             "app/assets/button-down.png")
+        signupbut.bind(on_release=signup_released)
         introlayout.add_widget(signupbut)
         # grid.add_widget(introlayout)
         self.size_hint=(1, None)
@@ -134,6 +155,6 @@ class Scroll(ScrollView, FloatLayout):
         self.pos_hint = {'center_x': 0.5, 'center_y': 0.465}
         self.bar_color = utils.get_color_from_hex("ffffff")
         self.bar_inactive_color = utils.get_color_from_hex("757575")
-        self.bar_width = 10
+        self.bar_width = 15
         self.scroll_type = ['bars','content']  
         self.add_widget(introlayout)
