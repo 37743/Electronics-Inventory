@@ -18,11 +18,20 @@ from app.scripts.support import Support
 from app.config.settings import VersionInfo
 from kivy.core.window import Window
 
+# Oracle DB
+import cx_Oracle
+
+connection = None
+
 def change_to_screen(*args, screen):
     App.get_running_app().screen_manager.current = screen
     return
 
 # Events
+def signup_released(instance):
+    App.get_running_app().signup.signupscroll.signup()
+    return
+
 def loginpg_released(instance):
     change_to_screen(screen="Login Page")
     return
@@ -36,6 +45,43 @@ def support_released(instance):
     return
 
 class Scroll(ScrollView, FloatLayout):
+    def signup(self):
+        try:
+            global connection
+            connection = cx_Oracle.connect(
+                "ORA23",
+                "oracleuser23",
+                "localhost/xe",
+                encoding='UTF-8')
+            self.signuperror.color = "green"
+            self.signuperror.text = "Successful Sign-up!"
+        except cx_Oracle.Error as error:
+            self.signuperror.color = "red"
+            self.signuperror.text = error
+        finally:
+            cursor = connection.cursor()
+            cursor.execute("""INSERT INTO locations VALUES
+                            (location_seq.NEXTVAL, :lname, :city, :pcode)
+                            """,
+                            lname=self.location.text,
+                            city=self.city.text,
+                            pcode=self.postalcode.text)
+            cursor.execute("""SELECT location_id FROM locations
+                           WHERE location_name = :lname
+                           """,
+                           lname = self.location.text)
+            location_id = str(cursor.fetchone()[0])
+            cursor.execute("""INSERT INTO retailers VALUES
+                           (retail_seq.NEXTVAL, :fname, :lname, :pnum, :email, :lid) 
+                           """,
+                           fname=self.firstname.text,
+                           lname=self.lastname.text,
+                           pnum=self.pnumber.text,
+                           email=self.email.text,
+                           lid=location_id)
+            connection.commit()
+            connection.close()
+
     def __init__(self, **kwargs):
         super(Scroll, self).__init__(**kwargs)
         scrollbox = BoxLayout(orientation="vertical", spacing=-20, padding=(360,16), size_hint_y=None)
@@ -94,7 +140,7 @@ class Scroll(ScrollView, FloatLayout):
                     size_hint = (.3,.5))
         box3.add_widget(picon)
         self.pnumber = TextInput(multiline=False,
-                    input_filter = 'float',
+                    input_filter = 'int',
                     write_tab=False,
                     pos_hint={"center_y": .25},
                     size_hint = (1,.3),
@@ -115,28 +161,55 @@ class Scroll(ScrollView, FloatLayout):
         box4.add_widget(self.email)
         scrollbox.add_widget(box4)
 
-        # Location ID
+        # Location Name
         box4 = BoxLayout(orientation="horizontal", size_hint_y=None)
-        eicon = Image(source="app/assets/store-icon.png",
+        sicon = Image(source="app/assets/store-icon.png",
                     size_hint = (.3,.5))
-        box4.add_widget(eicon)
+        box4.add_widget(sicon)
         self.location = TextInput(multiline=False,
                     write_tab=False,
-                    input_filter = 'float',
                     pos_hint={"center_y": .25},
                     size_hint = (1,.3),
-                    hint_text = "LOCATION ID")
+                    hint_text = "STORE NAME")
         box4.add_widget(self.location)
         scrollbox.add_widget(box4)
 
-        box6 = BoxLayout(orientation="vertical", size_hint_y=None)
-        signuperror = Label(text="",
+        # City
+        box5 = BoxLayout(orientation="horizontal", size_hint_y=None)
+        cicon = Image(source="app/assets/city-icon.png",
+                    size_hint = (.3,.5))
+        box5.add_widget(cicon)
+        self.city = TextInput(multiline=False,
+                    write_tab=False,
+                    pos_hint={"center_y": .25},
+                    size_hint = (1,.3),
+                    hint_text = "CITY")
+        box5.add_widget(self.city)
+        scrollbox.add_widget(box5)
+
+        # Postal Code
+        box6 = BoxLayout(orientation="horizontal", size_hint_y=None)
+        pcicon = Image(source="app/assets/postalcode-icon.png",
+                    size_hint = (.3,.5))
+        box6.add_widget(pcicon)
+        self.postalcode = TextInput(multiline=False,
+                    write_tab=False,
+                    input_filter = 'int',
+                    pos_hint={"center_y": .25},
+                    size_hint = (1,.3),
+                    hint_text = "POSTAL CODE")
+        box6.add_widget(self.postalcode)
+        scrollbox.add_widget(box6)
+
+        # Sign-up Button
+        box7 = BoxLayout(orientation="vertical", size_hint_y=None)
+        self.signuperror = Label(text="",
                             halign="center",
                             color = "red",
                             size_hint=(1,1),
                             font_size=12)
-        box6.add_widget(signuperror)
-        signupbut = Button(text="SIGN-UP", color = "#21d74d",
+        box7.add_widget(self.signuperror)
+        self.signupbut = Button(text="SIGN-UP", color = "#21d74d",
                             outline_width=2, outline_color ="#ffffff",
                             size_hint=(1,1),
                             font_size=18,
@@ -144,8 +217,9 @@ class Scroll(ScrollView, FloatLayout):
                             "app/assets/button.png",
                             background_down=
                             "app/assets/button-down.png")
-        box6.add_widget(signupbut)
-        scrollbox.add_widget(box6)
+        self.signupbut.bind(on_release=signup_released)
+        box7.add_widget(self.signupbut)
+        scrollbox.add_widget(box7)
 
         self.size_hint=(1, None)
         self.size=(Window.width, Window.height-140)
@@ -160,7 +234,7 @@ class Signup(Screen, FloatLayout):
     def _update_bg(self, instance, value):
         self.bg.pos = instance.pos
         self.bg.size = instance.size
-
+        
     def __init__(self, **kwargs):
         super(Signup, self).__init__(**kwargs)
         with self.canvas.before:
@@ -213,7 +287,8 @@ class Signup(Screen, FloatLayout):
                            pos_hint={"center_x": .5, "center_y": .465})
         self.add_widget(self.panel)
         
-        self.add_widget(Scroll())
+        self.signupscroll = Scroll()
+        self.add_widget(self.signupscroll)
 
         returnbut = Button(size_hint=(None,None),
                            size=(75,75),

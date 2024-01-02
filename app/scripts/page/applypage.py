@@ -18,13 +18,24 @@ from app.scripts.support import Support
 from app.config.settings import VersionInfo
 from kivy.core.window import Window
 
+# # Oracle DB
+# import cx_Oracle
+
+# connection = None
+
 def change_to_screen(*args, screen):
+    """ Orders the application's screen maanger to change
+      to screen given by the parameter "screen" """
     App.get_running_app().screen_manager.current = screen
     return
 
 # Events
 def about_released(instance):
     change_to_screen(screen="About Us Page")
+    return
+
+def apply_released(instance):
+    # App.get_running_app().apply.Scroll.apply()
     return
 
 def return_released(instance):
@@ -36,6 +47,43 @@ def support_released(instance):
     return
 
 class Scroll(ScrollView, FloatLayout):
+    # def apply(self):
+    #     try:
+    #         global connection
+    #         connection = cx_Oracle.connect(
+    #             "ORA23",
+    #             "oracleuser23",
+    #             "localhost/xe",
+    #             encoding='UTF-8')
+    #         self.applyerror.color = "green"
+    #         self.applyerror.text = "Successful Sign-up!"
+    #     except cx_Oracle.Error as error:
+    #         self.applyerror.color = "red"
+    #         self.applyerror.text = error
+    #     finally:
+    #         cursor = connection.cursor()
+    #         cursor.execute("""INSERT INTO locations VALUES
+    #                         (location_seq.NEXTVAL, :lname, :city, :pcode)
+    #                         """,
+    #                         lname=self.location.text,
+    #                         city=self.city.text,
+    #                         pcode=self.postalcode.text)
+    #         cursor.execute("""SELECT location_id FROM locations
+    #                        WHERE location_name = :lname
+    #                        """,
+    #                        lname = self.location.text)
+    #         location_id = str(cursor.fetchone()[0])
+    #         cursor.execute("""INSERT INTO retailers VALUES
+    #                        (retail_seq.NEXTVAL, :fname, :lname, :pnum, :email, :lid) 
+    #                        """,
+    #                        fname=self.firstname.text,
+    #                        lname=self.lastname.text,
+    #                        pnum=self.pnumber.text,
+    #                        email=self.email.text,
+    #                        lid=location_id)
+    #         connection.commit()
+    #         connection.close()
+
     def __init__(self, **kwargs):
         super(Scroll, self).__init__(**kwargs)
         scrollbox = BoxLayout(orientation="vertical", spacing=-20, padding=(360,16), size_hint_y=None)
@@ -50,7 +98,7 @@ class Scroll(ScrollView, FloatLayout):
                            pos_hint={"center_y": .6})
         box0.add_widget(self.ieemslogo)
         box00 = BoxLayout(size_hint_y=None)
-        message = Label(text="Welcome future employee!\n"\
+        message = Label(text="Welcome our  beloved employee to-be!\n"\
         +"Kindly fill the form below with your personal identification details!\n"+\
             "[b] Choose your desired role/job in the company. [/b]",
                     halign="center",
@@ -116,13 +164,13 @@ class Scroll(ScrollView, FloatLayout):
         scrollbox.add_widget(box4)
 
         box5 = BoxLayout(orientation="vertical", size_hint_y=None)
-        signuperror = Label(text="",
+        applyerror = Label(text="",
                             halign="center",
                             color = "red",
                             size_hint=(1,1),
                             font_size=12)
-        box5.add_widget(signuperror)
-        signupbut = Button(text="SIGN-UP", color = "#21d74d",
+        box5.add_widget(applyerror)
+        applybut = Button(text="SIGN-UP", color = "#21d74d",
                             outline_width=2, outline_color ="#ffffff",
                             size_hint=(1,1),
                             font_size=18,
@@ -130,7 +178,8 @@ class Scroll(ScrollView, FloatLayout):
                             "app/assets/button.png",
                             background_down=
                             "app/assets/button-down.png")
-        box5.add_widget(signupbut)
+        applybut.bind(on_release=apply_released)
+        box5.add_widget(applybut)
         scrollbox.add_widget(box5)
 
         self.size_hint=(1, None)
@@ -199,7 +248,8 @@ class Application(Screen, FloatLayout):
                            pos_hint={"center_x": .5, "center_y": .465})
         self.add_widget(self.panel)
         
-        self.add_widget(Scroll())
+        self.hirescroll = Scroll()
+        self.add_widget(self.hirescroll)
 
         returnbut = Button(size_hint=(None,None),
                            size=(75,75),

@@ -65,8 +65,6 @@ class Login(Screen, FloatLayout):
     def db_connect(self):
         global connection
         try:
-            print(self.userBox.text)
-            print(self.passBox.text)
             connection = cx_Oracle.connect(
                 self.userBox.text,
                 self.passBox.text,
