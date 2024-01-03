@@ -36,7 +36,7 @@ class App(App):
         self.inventory = inventorypage.Inventory(name="Inventory Page")
         self.screen_manager = ScreenManager(transition = WipeTransition())
 
-        for screen in [self.inventory, self.login, self.about, self.signup, self.apply]:
+        for screen in [self.about, self.login, self.inventory, self.signup, self.apply]:
             self.screen_manager.add_widget(screen)
         return self.screen_manager
 

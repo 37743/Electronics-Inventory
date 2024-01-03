@@ -3,6 +3,7 @@
 # Inventory Page
 # ---
 # --------
+import numpy as np
 from kivy import utils
 from kivy.app import App
 from kivy.uix.label import Label
@@ -18,6 +19,7 @@ from kivy.graphics import Rectangle
 from app.scripts.popup import Support
 from app.scripts.popup import Purchased
 from app.config.settings import VersionInfo
+from functools import partial
 from kivy.core.window import Window
 
 # Oracle DB
@@ -31,16 +33,17 @@ def change_to_screen(*args, screen):
 
 # Events
 def logout_released(instance):
-    global connection
-    connection.close()
     change_to_screen(screen="Login Page")
     return
 
 def purchase_released(instance):
+    App.get_running_app().inventory.change_stock()
     Purchased()
     return
 
-def add_released(instance):
+def add_released(instance, sku, name, idx):
+    quantity = App.get_running_app().inventory.inventoryscroll.productList[idx].quantityinput.text
+    App.get_running_app().inventory.add_product(sku, name, quantity)
     return
 
 def support_released(instance):
@@ -48,7 +51,7 @@ def support_released(instance):
     return
 
 class Product(BoxLayout, FloatLayout):
-    def __init__(self, product,**kwargs):
+    def __init__(self, product, idx, **kwargs):
         super(Product, self).__init__(**kwargs)
         self.orientation = 'vertical'
         self.spacing = 20
@@ -90,7 +93,10 @@ class Product(BoxLayout, FloatLayout):
                             background_down=
                             "app/assets/empty-icon-down.png")
         addlayout.add_widget(self.addbut)
-        self.addbut.bind(on_release=add_released)
+        self.addbut.bind(on_release=partial(add_released,
+                                            sku=product[0],
+                                            name=str(product[2][:10])+"...",
+                                            idx=idx))
         # Adding all widgets
         self.add_widget(self.productimg)
         self.add_widget(self.productname)
@@ -109,7 +115,9 @@ class Scroll(ScrollView, FloatLayout):
         try:
             cursor.execute("""SELECT * FROM products""")
             connection.commit()
-            return cursor.fetchall()
+            results = cursor.fetchall()
+            connection.close()
+            return results
         except cx_Oracle.Error as error:
             print(error)
 
@@ -119,8 +127,11 @@ class Scroll(ScrollView, FloatLayout):
         scrollbox.bind(minimum_height=scrollbox.setter('height'))
 
         # Data Query
-        for product in self.get_products():
-            scrollbox.add_widget(Product(product))
+        self.productList = []
+        for idx,product in enumerate(self.get_products()):
+            currProduct = Product(product, idx)
+            self.productList.append(currProduct)
+            scrollbox.add_widget(currProduct)
 
         self.size_hint=(.8, None)
         self.size=(Window.width, Window.height-140)
@@ -137,8 +148,57 @@ class Inventory(Screen, FloatLayout):
         self.bg.size = instance.size
     
     def update_user(self, new_user):
-        self.currUser.text = "[b] Current User:[/b] {db}".format(db=new_user)
+        self.currUser.text = "[b]Current User:[/b] {db}".format(db=new_user)
 
+    def change_stock(self):
+        global connection
+        username = App.get_running_app().login.userBox.text
+        password = App.get_running_app().login.passBox.text
+        connection = cx_Oracle.connect(
+            username,
+            password,
+            "localhost/xe",
+            encoding='UTF-8')
+        cursor = connection.cursor()
+        # try:
+        cursor.execute("""SELECT retailer_id FROM ems.retailers NATURAL JOIN ems.locations
+                        WHERE REPLACE(LOWER(location_name),' ','_') = :loc""",
+                        loc=self.currUser.text[21:])
+        retailer_id = cursor.fetchone()[0]
+        for order in self.orders:
+            cursor.execute("""INSERT INTO ems.orders VALUES
+                        (ems.orders_order_id_seq.NEXTVAL, TO_DATE(SYSDATE), :sku, :quantity,
+                        ems.shipments_shipment_id_seq.NEXTVAL, :ret_id, 11,
+                        ems.payments_payment_id_seq.NEXTVAL, :status)""",
+                        sku=order[0],
+                        quantity=order[1],
+                        ret_id=retailer_id,
+                        status='Pending')
+            cursor.execute("""UPDATE ems.products SET stock_quantity = stock_quantity - :quantity
+                            WHERE sku = :sku""",
+                        quantity=order[1],
+                        sku=order[0])
+        self.orders=[]
+        for idx, child in enumerate(self.orderlayout.children):
+            self.orderlayout.remove_widget(self.orderlayout.children[idx])
+        connection.commit()
+        connection.close()
+        # except cx_Oracle.Error as error:
+        #     print(error)
+    
+    def add_product(self, sku, name, quantity):
+        order = [sku, quantity, Button(text="[b] {n} - Q: {q}[/b]".format(n=name, q=quantity), color = "#2f2f2f",
+                            markup=True,
+                            size_hint=(.12,.08),
+                            font_size=16,
+                            pos_hint={"center_x": .5, "center_y": .5},
+                            background_normal=
+                            "app/assets/invis-button.png",
+                            background_down=
+                            "app/assets/invis-button-down.png")]
+        self.orders.append(order)
+        self.orderlayout.add_widget(order[2])
+    
     def __init__(self, **kwargs):
         super(Inventory, self).__init__(**kwargs)
         with self.canvas.before:
@@ -147,7 +207,8 @@ class Inventory(Screen, FloatLayout):
                                 pos = self.pos)
 
         self.bind(size = self._update_bg, pos = self._update_bg)
-
+        
+        self.orders = []
         taskbar = FloatLayout()
 
         ribbon = Image(source="app/assets/ribbon-taskbar.png",
@@ -212,37 +273,6 @@ class Inventory(Screen, FloatLayout):
                                       size_hint=(.16, None),
                                       pos_hint={"center_x": .9, "center_y": .72},
                                       size_hint_y=None)
-        
-        self.order1 = Button(text="[b] TEST [/b]", color = "#2f2f2f",
-                            markup=True,
-                            size_hint=(.12,.08),
-                            font_size=16,
-                            pos_hint={"center_x": .5, "center_y": .5},
-                            background_normal=
-                            "app/assets/invis-button.png",
-                            background_down=
-                            "app/assets/invis-button-down.png")
-        self.order2 = Button(text="[b] TEST [/b]", color = "#2f2f2f",
-                            markup=True,
-                            size_hint=(.12,.08),
-                            font_size=16,
-                            pos_hint={"center_x": .5, "center_y": .5},
-                            background_normal=
-                            "app/assets/invis-button.png",
-                            background_down=
-                            "app/assets/invis-button-down.png")
-        self.order3 = Button(text="[b] TEST [/b]", color = "#2f2f2f",
-                            markup=True,
-                            size_hint=(.12,.08),
-                            font_size=16,
-                            pos_hint={"center_x": .5, "center_y": .5},
-                            background_normal=
-                            "app/assets/invis-button.png",
-                            background_down=
-                            "app/assets/invis-button-down.png")
-        self.orderlayout.add_widget(self.order1)
-        self.orderlayout.add_widget(self.order2)
-        self.orderlayout.add_widget(self.order3)
         self.add_widget(self.orderlayout)
 
         self.purchasebut = Button(text="Purchase", color = "#21d74d",

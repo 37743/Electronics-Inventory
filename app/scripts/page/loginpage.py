@@ -85,7 +85,7 @@ class Login(Screen, FloatLayout):
             self.loginerror.color = "red"
             self.loginerror.text = str(error)
         if (connection):
-            Clock.schedule_once(login_success, 1)
+            Clock.schedule_once(login_success, 2)
 
     def __init__(self, **kwargs):
         super(Login, self).__init__(**kwargs)
