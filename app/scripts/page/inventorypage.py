@@ -160,31 +160,32 @@ class Inventory(Screen, FloatLayout):
             "localhost/xe",
             encoding='UTF-8')
         cursor = connection.cursor()
-        # try:
-        cursor.execute("""SELECT retailer_id FROM ems.retailers NATURAL JOIN ems.locations
-                        WHERE REPLACE(LOWER(location_name),' ','_') = :loc""",
-                        loc=self.currUser.text[21:])
-        retailer_id = cursor.fetchone()[0]
-        for order in self.orders:
-            cursor.execute("""INSERT INTO ems.orders VALUES
-                        (ems.orders_order_id_seq.NEXTVAL, TO_DATE(SYSDATE), :sku, :quantity,
-                        ems.shipments_shipment_id_seq.NEXTVAL, :ret_id, 11,
-                        ems.payments_payment_id_seq.NEXTVAL, :status)""",
-                        sku=order[0],
-                        quantity=order[1],
-                        ret_id=retailer_id,
-                        status='Pending')
-            cursor.execute("""UPDATE ems.products SET stock_quantity = stock_quantity - :quantity
-                            WHERE sku = :sku""",
-                        quantity=order[1],
-                        sku=order[0])
-        self.orders=[]
-        for idx, child in enumerate(self.orderlayout.children):
-            self.orderlayout.remove_widget(self.orderlayout.children[idx])
-        connection.commit()
-        connection.close()
-        # except cx_Oracle.Error as error:
-        #     print(error)
+        try:
+            cursor.execute("""SELECT retailer_id FROM ems.retailers NATURAL JOIN ems.locations
+                            WHERE REPLACE(LOWER(location_name),' ','_') = :loc""",
+                            loc=self.currUser.text[21:])
+            retailer_id = cursor.fetchone()[0]
+            for order in self.orders:
+                cursor.execute("""INSERT INTO ems.orders VALUES
+                            (ems.orders_order_id_seq.NEXTVAL, TO_DATE(SYSDATE), :sku, :quantity,
+                            ems.shipments_shipment_id_seq.NEXTVAL, :ret_id, 11,
+                            ems.payments_payment_id_seq.NEXTVAL, :status)""",
+                            sku=order[0],
+                            quantity=order[1],
+                            ret_id=retailer_id,
+                            status='Pending')
+                cursor.execute("""UPDATE ems.products SET stock_quantity = stock_quantity - :quantity
+                                WHERE sku = :sku""",
+                            quantity=order[1],
+                            sku=order[0])
+            self.orders=[]
+            widgets = [i for i in self.orderlayout.children]
+            for currWidget in widgets:
+                self.orderlayout.remove_widget(currWidget)
+            connection.commit()
+            connection.close()
+        except cx_Oracle.Error as error:
+            print(error)
     
     def add_product(self, sku, name, quantity):
         order = [sku, quantity, Button(text="[b] {n} - Q: {q}[/b]".format(n=name, q=quantity), color = "#2f2f2f",
