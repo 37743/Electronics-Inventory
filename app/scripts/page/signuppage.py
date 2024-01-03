@@ -14,7 +14,8 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.graphics import Rectangle
-from app.scripts.support import Support
+from app.scripts.popup import Support
+from app.scripts.popup import SignedUp
 from app.config.settings import VersionInfo
 from kivy.core.window import Window
 
@@ -28,6 +29,10 @@ def change_to_screen(*args, screen):
     return
 
 # Events
+def signup_success(user):
+    SignedUp(user)
+    return
+
 def signup_released(instance):
     App.get_running_app().signup.signupscroll.signup()
     return
@@ -41,46 +46,64 @@ def return_released(instance):
     return
 
 def support_released(instance):
+    # SignedUp("test")
     Support()
     return
+
 
 class Scroll(ScrollView, FloatLayout):
     def signup(self):
         try:
             global connection
             connection = cx_Oracle.connect(
-                "ORA23",
-                "oracleuser23",
+                "EMS",
+                "EMS",
                 "localhost/xe",
                 encoding='UTF-8')
-            self.signuperror.color = "green"
-            self.signuperror.text = "Successful Sign-up!"
         except cx_Oracle.Error as error:
             self.signuperror.color = "red"
-            self.signuperror.text = error
+            self.signuperror.text = str(error)
         finally:
             cursor = connection.cursor()
-            cursor.execute("""INSERT INTO locations VALUES
-                            (location_seq.NEXTVAL, :lname, :city, :pcode)
+            try:
+                username = self.location.text.replace(" ", "_").lower()
+                print(username)
+                print(self.password.text)
+                print("""CREATE USER """+str(username)\
+                               +""" IDENTIFIED BY """\
+                               +str(self.password.text))
+                cursor.execute("""CREATE USER """+str(username)\
+                               +""" IDENTIFIED BY """\
+                               +str(self.password.text))
+                cursor.execute("""GRANT retailer TO """+str(username))
+                connection.commit()
+                cursor.execute("""INSERT INTO locations VALUES
+                                (locations_location_id_seq.NEXTVAL, :lname, :city, :pcode)
+                                """,
+                                lname=self.location.text,
+                                city=self.city.text,
+                                pcode=self.postalcode.text)
+                cursor.execute("""SELECT location_id FROM locations
+                            WHERE location_name = :lname
                             """,
-                            lname=self.location.text,
-                            city=self.city.text,
-                            pcode=self.postalcode.text)
-            cursor.execute("""SELECT location_id FROM locations
-                           WHERE location_name = :lname
-                           """,
-                           lname = self.location.text)
-            location_id = str(cursor.fetchone()[0])
-            cursor.execute("""INSERT INTO retailers VALUES
-                           (retail_seq.NEXTVAL, :fname, :lname, :pnum, :email, :lid) 
-                           """,
-                           fname=self.firstname.text,
-                           lname=self.lastname.text,
-                           pnum=self.pnumber.text,
-                           email=self.email.text,
-                           lid=location_id)
-            connection.commit()
-            connection.close()
+                            lname = self.location.text)
+                location_id = str(cursor.fetchone()[0])
+                cursor.execute("""INSERT INTO retailers VALUES
+                            (retailers_retailer_id_seq.NEXTVAL, :fname, :lname, :pnum, :email, :lid) 
+                            """,
+                            fname=self.firstname.text,
+                            lname=self.lastname.text,
+                            pnum=self.pnumber.text,
+                            email=self.email.text,
+                            lid=location_id)
+                connection.commit()
+                connection.close()
+                signup_success(username)
+                self.signuperror.color = "green"
+                self.signuperror.text = "Successful Sign-up!"
+            except cx_Oracle.Error as error:
+                self.signuperror.color = "red"
+                self.signuperror.text = str(error)
 
     def __init__(self, **kwargs):
         super(Scroll, self).__init__(**kwargs)
@@ -108,6 +131,35 @@ class Scroll(ScrollView, FloatLayout):
         box00.add_widget(message)
         scrollbox.add_widget(box0)
         scrollbox.add_widget(box00)
+
+        # Location Name
+        box4 = BoxLayout(orientation="horizontal", size_hint_y=None)
+        sicon = Image(source="app/assets/store-icon.png",
+                    size_hint = (.3,.5))
+        box4.add_widget(sicon)
+        self.location = TextInput(multiline=False,
+                    write_tab=False,
+                    pos_hint={"center_y": .25},
+                    size_hint = (1,.3),
+                    hint_text = "STORE NAME")
+        box4.add_widget(self.location)
+        scrollbox.add_widget(box4)
+
+        # Password
+        box10 = BoxLayout(orientation="horizontal", size_hint_y=None)
+        pwicon = Image(source="app/assets/password-icon.png",
+                    size_hint = (.3,.5))
+        box10.add_widget(pwicon)
+        self.password = TextInput(multiline=False,
+                    write_tab=False,
+                    password = True,
+                    pos_hint={"center_y": .25},
+                    size_hint = (1,.3),
+                    hint_text = "PASSWORD")
+        box10.add_widget(self.password)
+        scrollbox.add_widget(box10)
+        
+        
         # First Name
         box1 = BoxLayout(orientation="horizontal", size_hint_y=None)
         ficon = Image(source="app/assets/user-icon.png",
@@ -159,19 +211,6 @@ class Scroll(ScrollView, FloatLayout):
                     size_hint = (1,.3),
                     hint_text = "EMAIL")
         box4.add_widget(self.email)
-        scrollbox.add_widget(box4)
-
-        # Location Name
-        box4 = BoxLayout(orientation="horizontal", size_hint_y=None)
-        sicon = Image(source="app/assets/store-icon.png",
-                    size_hint = (.3,.5))
-        box4.add_widget(sicon)
-        self.location = TextInput(multiline=False,
-                    write_tab=False,
-                    pos_hint={"center_y": .25},
-                    size_hint = (1,.3),
-                    hint_text = "STORE NAME")
-        box4.add_widget(self.location)
         scrollbox.add_widget(box4)
 
         # City
@@ -250,12 +289,13 @@ class Signup(Screen, FloatLayout):
                             pos_hint={"center_x": .5, "center_y": .94})
         self.taskbar.add_widget(ribbon)
 
-        currDB = Label(text="[b] Selected Database:[/b] {db}".format(db=VersionInfo.get_db()),
+        currUser = Label(text="[b] Current User:[/b] {db}".format(db=VersionInfo.get_user()),
                              halign='center',
                              color = "#2f2f2f",
                              markup=True,
                              pos_hint={"center_x": .9, "center_y": .93}, font_size=16)
-        self.taskbar.add_widget(currDB)
+        self.taskbar.add_widget(currUser)
+        
         loginpgbut = Button(text="[b] LOGIN [/b]", color = "#2f2f2f",
                             markup=True,
                             size_hint=(.12,.08),

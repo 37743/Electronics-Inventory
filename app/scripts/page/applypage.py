@@ -14,14 +14,14 @@ from kivy.uix.textinput import TextInput
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.graphics import Rectangle
-from app.scripts.support import Support
+from app.scripts.popup import Support
 from app.config.settings import VersionInfo
 from kivy.core.window import Window
 
-# # Oracle DB
-# import cx_Oracle
+# Oracle DB
+import cx_Oracle
 
-# connection = None
+connection = None
 
 def change_to_screen(*args, screen):
     """ Orders the application's screen maanger to change
@@ -35,7 +35,7 @@ def about_released(instance):
     return
 
 def apply_released(instance):
-    # App.get_running_app().apply.Scroll.apply()
+    App.get_running_app().apply.hirescroll.apply()
     return
 
 def return_released(instance):
@@ -47,48 +47,39 @@ def support_released(instance):
     return
 
 class Scroll(ScrollView, FloatLayout):
-    # def apply(self):
-    #     try:
-    #         global connection
-    #         connection = cx_Oracle.connect(
-    #             "ORA23",
-    #             "oracleuser23",
-    #             "localhost/xe",
-    #             encoding='UTF-8')
-    #         self.applyerror.color = "green"
-    #         self.applyerror.text = "Successful Sign-up!"
-    #     except cx_Oracle.Error as error:
-    #         self.applyerror.color = "red"
-    #         self.applyerror.text = error
-    #     finally:
-    #         cursor = connection.cursor()
-    #         cursor.execute("""INSERT INTO locations VALUES
-    #                         (location_seq.NEXTVAL, :lname, :city, :pcode)
-    #                         """,
-    #                         lname=self.location.text,
-    #                         city=self.city.text,
-    #                         pcode=self.postalcode.text)
-    #         cursor.execute("""SELECT location_id FROM locations
-    #                        WHERE location_name = :lname
-    #                        """,
-    #                        lname = self.location.text)
-    #         location_id = str(cursor.fetchone()[0])
-    #         cursor.execute("""INSERT INTO retailers VALUES
-    #                        (retail_seq.NEXTVAL, :fname, :lname, :pnum, :email, :lid) 
-    #                        """,
-    #                        fname=self.firstname.text,
-    #                        lname=self.lastname.text,
-    #                        pnum=self.pnumber.text,
-    #                        email=self.email.text,
-    #                        lid=location_id)
-    #         connection.commit()
-    #         connection.close()
+    def apply(self):
+        try:
+            global connection
+            connection = cx_Oracle.connect(
+                "EMS",
+                "EMS",
+                "localhost/xe",
+                encoding='UTF-8')
+        except cx_Oracle.Error as error:
+            self.applyerror.color = "red"
+            self.applyerror.text = str(error)
+        finally:
+            cursor = connection.cursor()
+            cursor.execute("""INSERT INTO employees VALUES
+                            (employees_employee_id_seq.NEXTVAL, :fname, :lname, :pnum, :email, :jobid, :sal, TO_DATE(SYSDATE), :dept) 
+                            """,
+                            fname=self.firstname.text,
+                            lname=self.lastname.text,
+                            pnum=self.pnumber.text,
+                            email=self.email.text,
+                            jobid=7,
+                            sal=5500,
+                            dept=50)
+            connection.commit()
+            connection.close()
+            self.applyerror.color = "green"
+            self.applyerror.text = "Welcome! You have been accepted!"
 
     def __init__(self, **kwargs):
         super(Scroll, self).__init__(**kwargs)
         scrollbox = BoxLayout(orientation="vertical", spacing=-20, padding=(360,16), size_hint_y=None)
         scrollbox.bind(minimum_height=scrollbox.setter('height'))
-        # Retailer Data Entry:
+        # Application Data Entry:
         # ---
         # -----
         box0 = BoxLayout(size_hint_y=None)
@@ -99,8 +90,7 @@ class Scroll(ScrollView, FloatLayout):
         box0.add_widget(self.ieemslogo)
         box00 = BoxLayout(size_hint_y=None)
         message = Label(text="Welcome our  beloved employee to-be!\n"\
-        +"Kindly fill the form below with your personal identification details!\n"+\
-            "[b] Choose your desired role/job in the company. [/b]",
+        +"Kindly fill the form below with your personal identification details!",
                     halign="center",
                     valign="center",
                     markup=True,
@@ -164,12 +154,12 @@ class Scroll(ScrollView, FloatLayout):
         scrollbox.add_widget(box4)
 
         box5 = BoxLayout(orientation="vertical", size_hint_y=None)
-        applyerror = Label(text="",
+        self.applyerror = Label(text="",
                             halign="center",
                             color = "red",
                             size_hint=(1,1),
                             font_size=12)
-        box5.add_widget(applyerror)
+        box5.add_widget(self.applyerror)
         applybut = Button(text="SIGN-UP", color = "#21d74d",
                             outline_width=2, outline_color ="#ffffff",
                             size_hint=(1,1),
@@ -211,12 +201,13 @@ class Application(Screen, FloatLayout):
                             pos_hint={"center_x": .5, "center_y": .94})
         self.taskbar.add_widget(ribbon)
 
-        currDB = Label(text="[b] Selected Database:[/b] {db}".format(db=VersionInfo.get_db()),
+        currUser = Label(text="[b] Current User:[/b] {db}".format(db=VersionInfo.get_user()),
                              halign='center',
                              color = "#2f2f2f",
                              markup=True,
                              pos_hint={"center_x": .9, "center_y": .93}, font_size=16)
-        self.taskbar.add_widget(currDB)
+        self.taskbar.add_widget(currUser)
+        
         aboutbut = Button(text="[b] ABOUT US [/b]", color = "#2f2f2f",
                             markup=True,
                             size_hint=(.12,.08),

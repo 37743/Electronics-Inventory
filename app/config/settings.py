@@ -8,10 +8,11 @@
      needed to be used globally.
      In the event of failure, kindly refer to
      the version info stated in the deployed app.'''
-settings = {"version": "0.1.1",
-            "day": 1,
+settings = {"version": "0.2.4",
+            "day": 3,
             "month": 1,
             "year": 2024}
+curr_user = "None"
 
 class VersionInfo():
     ''' Class that contains all related info regarding the deployment.'''
@@ -23,7 +24,10 @@ class VersionInfo():
         ''' Generate project title'''
         return "EMS V.{v} - {d}".format(v = settings['version'], d = VersionInfo.get_date())
     
-    def get_db():
-        ''' Get current name of database,
-        TODO: defaulted to "testdb" and to-be changed later.'''
-        return str(None)
+    def get_user():
+        ''' Get current name of user connected. '''
+        return curr_user
+    
+    def set_user(input):
+        global curr_user
+        curr_user = str(input)

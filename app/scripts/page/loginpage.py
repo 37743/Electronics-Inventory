@@ -13,7 +13,7 @@ from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.graphics import Rectangle
 from kivy.animation import Animation
-from app.scripts.support import Support
+from app.scripts.popup import Support
 from app.config.settings import VersionInfo
 from kivy.clock import Clock
 
@@ -23,46 +23,54 @@ import cx_Oracle
 connection = None
 
 def change_to_screen(*args, screen):
+    """ Changes the interface current shown to the user using Screen Manager object. """
     App.get_running_app().screen_manager.current = screen
     return
 
 # Events
 def login_success(*args):
-    change_to_screen(screen="About Us Page")
+    """ Event that is fired when the user logs in successfully. Proceeds to Inventory page with user data. """
+    App.get_running_app().inventory.update_user(VersionInfo.get_user())
+    change_to_screen(screen="Inventory Page")
     return
 
 def about_released(instance):
+    """ Event that is fired when the About Us button is released. """
     change_to_screen(screen="About Us Page")
     return
 
 def apply_released(instance):
+    """ Event that is fired when the Apply button is released. """
     change_to_screen(screen="Application Page")
     return
 
 def login_released(instance):
+    """ Event that is fired when the Login button is released. """
     App.get_running_app().login.db_connect()
     return
 
 def support_released(instance):
+    """ Event that is fired when the Support button is released. """
     Support()
     return
 
 def float_effect(widget, yn, d):
+    """ Floating animation that is used for some buttons, take yn, which is the distance to be covered in the y direction,
+      and d, which is the duration taken to cover said distance. """
     anim = Animation(y=-yn, duration = d, t="in_out_cubic") + Animation(y=0, duration=d, t="in_out_cubic")
     anim.repeat = True
     anim.start(widget)
     return
 
 class Login(Screen, FloatLayout):
+    """ Login page logic """
     def _update_bg(self, instance, value):
+        """ Resizes background(s) on window resizing event. """
         self.bg.pos = instance.pos
         self.bg.size = instance.size
-
-    def about_released(self, instance):
-        change_to_screen(screen="About Us Page")
-        return
     
     def db_connect(self):
+        """ Connects to the database, checks if user exists and proceeds with login logic. """
         global connection
         try:
             connection = cx_Oracle.connect(
@@ -72,11 +80,12 @@ class Login(Screen, FloatLayout):
                 encoding='UTF-8')
             self.loginerror.color = "green"
             self.loginerror.text = "Successful Login!"
+            VersionInfo.set_user(self.userBox.text)
         except cx_Oracle.Error as error:
             self.loginerror.color = "red"
             self.loginerror.text = str(error)
         if (connection):
-            Clock.schedule_once(login_success, 3)
+            Clock.schedule_once(login_success, 1)
 
     def __init__(self, **kwargs):
         super(Login, self).__init__(**kwargs)
@@ -95,12 +104,12 @@ class Login(Screen, FloatLayout):
                             allow_stretch = True)
         self.taskbar.add_widget(ribbon)
 
-        currDB = Label(text="[b] Selected Database:[/b] {db}".format(db=VersionInfo.get_db()),
+        currUser = Label(text="[b] Current User:[/b] {db}".format(db=VersionInfo.get_user()),
                              halign='center',
                              color = "#2f2f2f",
                              markup=True,
                              pos_hint={"center_x": .9, "center_y": .93}, font_size=16)
-        self.taskbar.add_widget(currDB)
+        self.taskbar.add_widget(currUser)
 
         aboutusbut = Button(text="[b] ABOUT US [/b]", color = "#2f2f2f",
                             markup=True,

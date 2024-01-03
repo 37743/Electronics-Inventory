@@ -12,7 +12,7 @@ from kivy.uix.scrollview import ScrollView
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.graphics import Rectangle
-from app.scripts.support import Support
+from app.scripts.popup import Support
 from app.config.settings import VersionInfo
 from kivy.core.window import Window
 
@@ -54,12 +54,12 @@ class About(Screen, FloatLayout):
                             allow_stretch = True)
         self.taskbar.add_widget(ribbon)
 
-        currDB = Label(text="[b] Selected Database:[/b] {db}".format(db=VersionInfo.get_db()),
+        currUser = Label(text="[b] Current User:[/b] {db}".format(db=VersionInfo.get_user()),
                              halign='center',
                              color = "#2f2f2f",
                              markup=True,
                              pos_hint={"center_x": .9, "center_y": .93}, font_size=16)
-        self.taskbar.add_widget(currDB)
+        self.taskbar.add_widget(currUser)
 
         loginpgbut = Button(text="[b] LOGIN [/b]", color = "#2f2f2f",
                             markup=True,
