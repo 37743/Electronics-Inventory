@@ -100,8 +100,7 @@ class Login(Screen, FloatLayout):
         self.taskbar = FloatLayout()
 
         ribbon = Image(source="app/assets/ribbon-taskbar.png",
-                            pos_hint={"center_x": .5, "center_y": .94},
-                            allow_stretch = True)
+                            pos_hint={"center_x": .5, "center_y": .94})
         self.taskbar.add_widget(ribbon)
 
         currUser = Label(text="[b] Current User:[/b] {db}".format(db=VersionInfo.get_user()),
@@ -139,12 +138,10 @@ class Login(Screen, FloatLayout):
         self.ui = FloatLayout()
 
         self.panel = Image(source="app/assets/panel-2.png",
-                           allow_stretch = False,
                            pos_hint={"center_x": .5, "center_y": .5})
         self.ui.add_widget(self.panel)
 
         self.ieemslogo = Image(source="app/assets/ieemslogo.png",
-                           allow_stretch = False,
                            size_hint=(.13,.13),
                            pos_hint={"center_x": .5, "center_y": .66})
         self.ui.add_widget(self.ieemslogo)
@@ -197,7 +194,6 @@ class Login(Screen, FloatLayout):
         self.hireui = FloatLayout()
         self.hirepanel = Image(source="app/assets/panel-2.png",
                                 size_hint=(.3,.2),
-                                allow_stretch = False,
                                 pos_hint={"center_x": .9, "center_y": .15})
         self.hireui.add_widget(self.hirepanel)
 

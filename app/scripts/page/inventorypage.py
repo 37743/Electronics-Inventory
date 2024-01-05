@@ -18,6 +18,7 @@ from kivy.uix.image import Image
 from kivy.graphics import Rectangle
 from app.scripts.popup import Support
 from app.scripts.popup import Purchased
+from app.scripts.popup import Orders
 from app.config.settings import VersionInfo
 from functools import partial
 from kivy.core.window import Window
@@ -34,6 +35,10 @@ def change_to_screen(*args, screen):
 # Events
 def logout_released(instance):
     change_to_screen(screen="Login Page")
+    return
+
+def orders_released(instance):
+    App.get_running_app().inventory.list_orders()
     return
 
 def purchase_released(instance):
@@ -150,6 +155,31 @@ class Inventory(Screen, FloatLayout):
     def update_user(self, new_user):
         self.currUser.text = "[b]Current User:[/b] {db}".format(db=new_user)
 
+    def list_orders(self):
+        global connection
+        username = App.get_running_app().login.userBox.text
+        password = App.get_running_app().login.passBox.text
+        connection = cx_Oracle.connect(
+            username,
+            password,
+            "localhost/xe",
+            encoding='UTF-8')
+        cursor = connection.cursor()
+        try:
+            cursor.execute("""SELECT retailer_id FROM ems.retailers NATURAL JOIN ems.locations
+                            WHERE REPLACE(LOWER(location_name),' ','_') = :loc""",
+                            loc=self.currUser.text[21:])
+            retailer_id = cursor.fetchone()[0]
+            cursor.execute("""SELECT * FROM ems.orders
+                           WHERE retailer_id = :ret_id AND order_status = 'Pending'""",
+                           ret_id=retailer_id)
+            retailer_orders = cursor.fetchall()
+            connection.commit()
+            connection.close()
+            Orders(retailer_orders, username, password)
+        except cx_Oracle.Error as error:
+            print(error)
+
     def change_stock(self):
         global connection
         username = App.get_running_app().login.userBox.text
@@ -223,11 +253,23 @@ class Inventory(Screen, FloatLayout):
                              pos_hint={"center_x": .9, "center_y": .93}, font_size=16)
         taskbar.add_widget(self.currUser)
         
-        supportbut = Button(text="[b] SUPPORT [/b]", color = "#2f2f2f",
+        ordersbut = Button(text="[b] ORDERS [/b]", color = "#2f2f2f",
                             markup=True,
                             size_hint=(.12,.08),
                             font_size=16,
                             pos_hint={"center_x": .17, "center_y": .93},
+                            background_normal=
+                            "app/assets/invis-button.png",
+                            background_down=
+                            "app/assets/invis-button-down.png")
+        ordersbut.bind(on_release=orders_released)
+        taskbar.add_widget(ordersbut)
+
+        supportbut = Button(text="[b] SUPPORT [/b]", color = "#2f2f2f",
+                            markup=True,
+                            size_hint=(.12,.08),
+                            font_size=16,
+                            pos_hint={"center_x": .29, "center_y": .93},
                             background_normal=
                             "app/assets/invis-button.png",
                             background_down=
@@ -239,7 +281,7 @@ class Inventory(Screen, FloatLayout):
                             markup=True,
                             size_hint=(.12,.08),
                             font_size=16,
-                            pos_hint={"center_x": .29, "center_y": .93},
+                            pos_hint={"center_x": .41, "center_y": .93},
                             background_normal=
                             "app/assets/invis-button.png",
                             background_down=
@@ -248,14 +290,12 @@ class Inventory(Screen, FloatLayout):
         taskbar.add_widget(logoutbut)
         
         self.gpanel = Image(source="app/assets/panel-3.png",
-                           allow_stretch = False,
                            pos_hint={"center_x": .905, "center_y": .4})
         self.add_widget(self.gpanel)
 
         self.add_widget(taskbar)
 
         self.panel = Image(source="app/assets/panel-5.png",
-                           allow_stretch = False,
                            pos_hint={"center_x": .4, "center_y": .465})
         self.add_widget(self.panel)
         
@@ -276,7 +316,7 @@ class Inventory(Screen, FloatLayout):
                                       size_hint_y=None)
         self.add_widget(self.orderlayout)
 
-        self.purchasebut = Button(text="Purchase", color = "#21d74d",
+        self.purchasebut = Button(text="PURCHASE", color = "#21d74d",
                             outline_width=2, outline_color ="#ffffff",
                             size_hint=(.15,.08),
                             pos_hint={"center_x": .9, "center_y": .1},

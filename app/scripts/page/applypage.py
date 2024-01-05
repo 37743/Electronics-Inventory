@@ -84,7 +84,6 @@ class Scroll(ScrollView, FloatLayout):
         # -----
         box0 = BoxLayout(size_hint_y=None)
         self.ieemslogo = Image(source="app/assets/ieemslogo.png",
-                           allow_stretch = False,
                            size_hint=(1,1),
                            pos_hint={"center_y": .6})
         box0.add_widget(self.ieemslogo)
@@ -235,7 +234,6 @@ class Application(Screen, FloatLayout):
         self.add_widget(self.taskbar)
 
         self.panel = Image(source="app/assets/panel-4.png",
-                           allow_stretch = False,
                            pos_hint={"center_x": .5, "center_y": .465})
         self.add_widget(self.panel)
         

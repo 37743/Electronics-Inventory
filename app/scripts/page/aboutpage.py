@@ -50,8 +50,7 @@ class About(Screen, FloatLayout):
         self.taskbar = FloatLayout()
 
         ribbon = Image(source="app/assets/ribbon-taskbar.png",
-                            pos_hint={"center_x": .5, "center_y": .94},
-                            allow_stretch = True)
+                            pos_hint={"center_x": .5, "center_y": .94})
         self.taskbar.add_widget(ribbon)
 
         currUser = Label(text="[b] Current User:[/b] {db}".format(db=VersionInfo.get_user()),
