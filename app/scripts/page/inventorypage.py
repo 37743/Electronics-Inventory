@@ -3,7 +3,6 @@
 # Inventory Page
 # ---
 # --------
-import numpy as np
 from kivy import utils
 from kivy.app import App
 from kivy.uix.label import Label
@@ -42,13 +41,17 @@ def orders_released(instance):
     return
 
 def purchase_released(instance):
-    App.get_running_app().inventory.change_stock()
-    Purchased()
+    success = App.get_running_app().inventory.change_stock()
+    print(success)
+    if (success == 0):
+        Purchased()
     return
 
 def add_released(instance, sku, name, idx):
     quantity = App.get_running_app().inventory.inventoryscroll.productList[idx].quantityinput.text
-    App.get_running_app().inventory.add_product(sku, name, quantity)
+    if (quantity != ""):
+        if (int(quantity) > 0):
+            App.get_running_app().inventory.add_product(sku, name, quantity)
     return
 
 def support_released(instance):
@@ -157,8 +160,8 @@ class Inventory(Screen, FloatLayout):
 
     def list_orders(self):
         global connection
-        username = App.get_running_app().login.userBox.text
-        password = App.get_running_app().login.passBox.text
+        username = str(App.get_running_app().login.userBox.text).lower()
+        password = str(App.get_running_app().login.passBox.text).lower()
         connection = cx_Oracle.connect(
             username,
             password,
@@ -181,9 +184,11 @@ class Inventory(Screen, FloatLayout):
             print(error)
 
     def change_stock(self):
+        if (len(self.orders) == 0):
+            return 1
         global connection
-        username = App.get_running_app().login.userBox.text
-        password = App.get_running_app().login.passBox.text
+        username = str(App.get_running_app().login.userBox.text).lower()
+        password = str(App.get_running_app().login.passBox.text).lower()
         connection = cx_Oracle.connect(
             username,
             password,
@@ -216,6 +221,7 @@ class Inventory(Screen, FloatLayout):
             connection.close()
         except cx_Oracle.Error as error:
             print(error)
+        return 0
     
     def add_product(self, sku, name, quantity):
         order = [sku, quantity, Button(text="[b] {n} - Q: {q}[/b]".format(n=name, q=quantity), color = "#2f2f2f",

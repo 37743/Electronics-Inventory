@@ -74,8 +74,8 @@ class Login(Screen, FloatLayout):
         global connection
         try:
             connection = cx_Oracle.connect(
-                self.userBox.text,
-                self.passBox.text,
+                str(self.userBox.text).lower(),
+                str(self.passBox.text).lower(),
                 "localhost/xe",
                 encoding='UTF-8')
             self.loginerror.color = "green"

@@ -52,6 +52,14 @@ def support_released(instance):
 
 class Scroll(ScrollView, FloatLayout):
     def signup(self):
+        boxtext = [self.location.text, self.password.text, self.city.text,
+                     self.postalcode.text, self.pnumber.text, self.email.text,
+                     self.firstname.text, self.lastname.text]
+        for text in boxtext:
+            if (len(text) == 0):
+                self.signuperror.color = "red"
+                self.signuperror.text = "Kindly fill all the designated textboxes!"
+                return
         try:
             global connection
             connection = cx_Oracle.connect(
@@ -66,11 +74,6 @@ class Scroll(ScrollView, FloatLayout):
             cursor = connection.cursor()
             try:
                 username = self.location.text.replace(" ", "_").lower()
-                print(username)
-                print(self.password.text)
-                print("""CREATE USER """+str(username)\
-                               +""" IDENTIFIED BY """\
-                               +str(self.password.text))
                 cursor.execute("""CREATE USER """+str(username)\
                                +""" IDENTIFIED BY """\
                                +str(self.password.text))

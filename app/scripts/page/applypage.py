@@ -48,6 +48,13 @@ def support_released(instance):
 
 class Scroll(ScrollView, FloatLayout):
     def apply(self):
+        boxtext = [self.firstname.text, self.lastname.text,
+                   self.pnumber.text, self.email.text]
+        for text in boxtext:
+            if (len(text) == 0):
+                self.applyerror.color = "red"
+                self.applyerror.text = "Kindly fill all the designated textboxes!"
+                return
         try:
             global connection
             connection = cx_Oracle.connect(

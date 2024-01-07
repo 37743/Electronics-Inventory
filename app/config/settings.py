@@ -30,4 +30,4 @@ class VersionInfo():
     
     def set_user(input):
         global curr_user
-        curr_user = str(input)
+        curr_user = str(input).lower()
