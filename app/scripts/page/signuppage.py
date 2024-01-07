@@ -74,11 +74,6 @@ class Scroll(ScrollView, FloatLayout):
             cursor = connection.cursor()
             try:
                 username = self.location.text.replace(" ", "_").lower()
-                cursor.execute("""CREATE USER """+str(username)\
-                               +""" IDENTIFIED BY """\
-                               +str(self.password.text))
-                cursor.execute("""GRANT retailer TO """+str(username))
-                connection.commit()
                 cursor.execute("""INSERT INTO locations VALUES
                                 (locations_location_id_seq.NEXTVAL, :lname, :city, :pcode)
                                 """,
@@ -98,6 +93,10 @@ class Scroll(ScrollView, FloatLayout):
                             pnum=self.pnumber.text,
                             email=self.email.text,
                             lid=location_id)
+                cursor.execute("""CREATE USER """+str(username)\
+                               +""" IDENTIFIED BY """\
+                               +str(self.password.text))
+                cursor.execute("""GRANT retailer TO """+str(username))
                 connection.commit()
                 connection.close()
                 signup_success(username)
