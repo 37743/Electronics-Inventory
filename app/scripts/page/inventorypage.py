@@ -203,7 +203,7 @@ class Inventory(Screen, FloatLayout):
             for order in self.orders:
                 cursor.execute("""INSERT INTO ems.orders VALUES
                             (ems.orders_order_id_seq.NEXTVAL, TO_DATE(SYSDATE), :sku, :quantity,
-                            ems.shipments_shipment_id_seq.NEXTVAL, :ret_id, 11,
+                            ems.shipments_shipment_id_seq.NEXTVAL, :ret_id, 21,
                             ems.payments_payment_id_seq.NEXTVAL, :status)""",
                             sku=order[0],
                             quantity=order[1],
