@@ -1,5 +1,3 @@
-# Egypt-Japan University of Science and Technology
-# Artificial Intelligence and Data Science Department
 # Employee Application Page
 # ---
 # --------
@@ -18,9 +16,7 @@ from app.scripts.popup import Support
 from app.config.settings import VersionInfo
 from kivy.core.window import Window
 
-# Oracle DB
-import cx_Oracle
-
+import pymssql
 connection = None
 
 def change_to_screen(*args, screen):
@@ -57,26 +53,31 @@ class Scroll(ScrollView, FloatLayout):
                 return
         try:
             global connection
-            connection = cx_Oracle.connect(
-                "EMS",
-                "EMS",
-                "localhost/xe",
-                encoding='UTF-8')
-        except cx_Oracle.Error as error:
+            connection = pymssql.connect(
+                    host='localhost',
+                    user='Yousef',
+                    password='123',
+                    database='ElectronicsStore',
+                    as_dict=True
+            ) 
+        except pymssql.Error as error:
             self.applyerror.color = "red"
-            self.applyerror.text = str(error)
+            self.applyerror.text = str(error) if len(str(error)) < 50 else str(error)[:50] + "..."
         finally:
             cursor = connection.cursor()
-            cursor.execute("""INSERT INTO employees VALUES
-                            (employees_employee_id_seq.NEXTVAL, :fname, :lname, :pnum, :email, :jobid, :sal, TO_DATE(SYSDATE), :dept) 
-                            """,
-                            fname=self.firstname.text,
-                            lname=self.lastname.text,
-                            pnum=self.pnumber.text,
-                            email=self.email.text,
-                            jobid=7,
-                            sal=5500,
-                            dept=50)
+            
+            cursor.execute("""
+                INSERT INTO employees (first_name, last_name, phone_number, email, job_id, salary, hire_date, department_id) 
+                VALUES (@fname, @lname, @pnum, @email, @jobid, @sal, GETDATE(), @dept)
+            """,
+            fname=self.firstname.text,
+            lname=self.lastname.text,
+            pnum=self.pnumber.text,
+            email=self.email.text,
+            jobid=7,
+            sal=5500,
+            dept=50)
+
             connection.commit()
             connection.close()
             self.applyerror.color = "green"
@@ -255,7 +256,7 @@ class Application(Screen, FloatLayout):
         returnbut.bind(on_release=return_released)
         self.add_widget(returnbut)
 
-        self.footer = Label(text="This project is exclusively made for CNC-314 Database Systems' Course Project - @github.com/37743",
+        self.footer = Label(text="DEPI Microsoft Data Engineer Graduation Project - ONL1_AIS4_M9e - @github.com/37743",
                              color = "##6ee58b",
                              pos_hint={"center_x": .5, "center_y": .04},
                              font_size=11)

@@ -1,5 +1,3 @@
-# Egypt-Japan University of Science and Technology
-# Artificial Intelligence and Data Science Department
 # About Us Page
 # ---
 # --------
@@ -87,7 +85,7 @@ class About(Screen, FloatLayout):
         self.add_widget(self.taskbar)
         self.add_widget(Scroll())
 
-        self.footer = Label(text="This project is exclusively made for CNC-314 Database Systems' Course Project - @github.com/37743",
+        self.footer = Label(text="DEPI Microsoft Data Engineer Graduation Project - ONL1_AIS4_M9e - @github.com/37743",
                              color = "##6ee58b",
                              pos_hint={"center_x": .5, "center_y": .04},
                              font_size=11)

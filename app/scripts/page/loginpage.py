@@ -1,5 +1,3 @@
-# Egypt-Japan University of Science and Technology
-# Artificial Intelligence and Data Science Department
 # Login Page
 # ---
 # --------
@@ -17,8 +15,7 @@ from app.scripts.popup import Support
 from app.config.settings import VersionInfo
 from kivy.clock import Clock
 
-# Oracle DB
-import cx_Oracle
+import pymssql
 
 connection = None
 
@@ -73,17 +70,19 @@ class Login(Screen, FloatLayout):
         """ Connects to the database, checks if user exists and proceeds with login logic. """
         global connection
         try:
-            connection = cx_Oracle.connect(
-                str(self.userBox.text).lower(),
-                str(self.passBox.text).lower(),
-                "localhost/xe",
-                encoding='UTF-8')
+            connection = pymssql.connect(
+                    host='localhost',
+                    user=str(self.userBox.text).lower(),
+                    password=str(self.passBox.text).lower(),
+                    database='ElectronicsStore',
+                    as_dict=True
+                )  
             self.loginerror.color = "green"
             self.loginerror.text = "Successful Login!"
             VersionInfo.set_user(self.userBox.text)
-        except cx_Oracle.Error as error:
+        except pymssql.Error as error:
             self.loginerror.color = "red"
-            self.loginerror.text = str(error)
+            self.loginerror.text = str(error) if len(str(error)) < 50 else str(error)[:50] + "..."
         if (connection):
             Clock.schedule_once(login_success, 2)
 
@@ -222,7 +221,7 @@ class Login(Screen, FloatLayout):
         self.add_widget(self.taskbar)
 
         # Footer
-        self.footer = Label(text="This project is exclusively made for CNC-314 Database Systems' Course Project - @github.com/37743",
+        self.footer = Label(text="DEPI Microsoft Data Engineer Graduation Project - ONL1_AIS4_M9e - @github.com/37743",
                              color = "##6ee58b",
                              pos_hint={"center_x": .5, "center_y": .04}, font_size=11)
         self.add_widget(self.footer)

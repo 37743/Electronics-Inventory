@@ -1,5 +1,3 @@
-# Egypt-Japan University of Science and Technology
-# Artificial Intelligence and Data Science Department
 # Sign-up Page
 # ---
 # --------
@@ -19,9 +17,7 @@ from app.scripts.popup import SignedUp
 from app.config.settings import VersionInfo
 from kivy.core.window import Window
 
-# Oracle DB
-import cx_Oracle
-
+import pymssql
 connection = None
 
 def change_to_screen(*args, screen):
@@ -52,59 +48,93 @@ def support_released(instance):
 
 class Scroll(ScrollView, FloatLayout):
     def signup(self):
-        boxtext = [self.location.text, self.password.text, self.city.text,
-                     self.postalcode.text, self.pnumber.text, self.email.text,
-                     self.firstname.text, self.lastname.text]
+        boxtext = [
+            self.location.text, 
+            self.password.text, 
+            self.city.text,
+            self.postalcode.text, 
+            self.pnumber.text, 
+            self.email.text,
+            self.firstname.text, 
+            self.lastname.text
+        ]
+
         for text in boxtext:
-            if (len(text) == 0):
+            if len(text) == 0:
                 self.signuperror.color = "red"
                 self.signuperror.text = "Kindly fill all the designated textboxes!"
                 return
+
+        cursor = None
+        transaction_started = False  # Track if a transaction has started
+
         try:
             global connection
-            connection = cx_Oracle.connect(
-                "EMS",
-                "EMS",
-                "localhost/xe",
-                encoding='UTF-8')
-        except cx_Oracle.Error as error:
-            self.signuperror.color = "red"
-            self.signuperror.text = str(error)
-        finally:
+            connection = pymssql.connect(
+                host='localhost',
+                user='Yousef',
+                password='123',
+                database='ElectronicsStore',
+            )
             cursor = connection.cursor()
-            try:
-                username = self.location.text.replace(" ", "_").lower()
-                cursor.execute("""INSERT INTO locations VALUES
-                                (locations_location_id_seq.NEXTVAL, :lname, :city, :pcode)
-                                """,
-                                lname=self.location.text,
-                                city=self.city.text,
-                                pcode=self.postalcode.text)
-                cursor.execute("""SELECT location_id FROM locations
-                            WHERE location_name = :lname
-                            """,
-                            lname = self.location.text)
-                location_id = str(cursor.fetchone()[0])
-                cursor.execute("""INSERT INTO retailers VALUES
-                            (retailers_retailer_id_seq.NEXTVAL, :fname, :lname, :pnum, :email, :lid) 
-                            """,
-                            fname=self.firstname.text,
-                            lname=self.lastname.text,
-                            pnum=self.pnumber.text,
-                            email=self.email.text,
-                            lid=location_id)
-                cursor.execute("""CREATE USER """+str(username)\
-                               +""" IDENTIFIED BY """\
-                               +str(self.password.text))
-                cursor.execute("""GRANT retailer TO """+str(username))
-                connection.commit()
+
+            # Begin a transaction
+            cursor.execute("BEGIN TRANSACTION")
+            transaction_started = True  # Mark that the transaction has started
+
+            # Insert new location
+            cursor.execute("""
+                INSERT INTO locations (location_name, city, postal_code) 
+                VALUES (%s, %s, %s)
+            """, (self.location.text, self.city.text, self.postalcode.text))
+
+            # Get the newly inserted location_id
+            cursor.execute("""
+                SELECT location_id 
+                FROM locations 
+                WHERE location_name = %s
+            """, (self.location.text,))
+            location_id = cursor.fetchone()[0]
+
+            # Insert new retailer
+            cursor.execute("""
+                INSERT INTO retailers (first_name, last_name, phone_number, email, location_id) 
+                VALUES (%s, %s, %s, %s, %s)
+            """, (self.firstname.text, self.lastname.text, self.pnumber.text, self.email.text, location_id))
+
+            # Create SQL Server login
+            username = self.location.text.replace(" ", "_").lower()
+            cursor.execute(f"""
+                CREATE LOGIN [{username}] WITH PASSWORD = '{self.password.text}';
+            """)
+
+            # Add user to retailer role
+            cursor.execute(f"""
+                EXEC sp_addrolemember 'retailer', '{username}';
+            """)
+
+            # If all commands succeed, commit the transaction
+            cursor.execute("COMMIT TRANSACTION")
+
+            # Success message
+            self.signuperror.color = "green"
+            self.signuperror.text = "Successful Sign-up!"
+            signup_success(username)
+
+        except pymssql.Error as error:
+            print(f"Error occurred: {error}")
+            self.signuperror.color = "red"
+            self.signuperror.text = str(error) if len(str(error)) < 50 else str(error)[:50] + "..."
+
+            # Rollback in case of error only if a transaction was started
+            if transaction_started:
+                cursor.execute("ROLLBACK TRANSACTION")
+
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
                 connection.close()
-                signup_success(username)
-                self.signuperror.color = "green"
-                self.signuperror.text = "Successful Sign-up!"
-            except cx_Oracle.Error as error:
-                self.signuperror.color = "red"
-                self.signuperror.text = str(error)
 
     def __init__(self, **kwargs):
         super(Scroll, self).__init__(**kwargs)
@@ -337,7 +367,7 @@ class Signup(Screen, FloatLayout):
         returnbut.bind(on_release=return_released)
         self.add_widget(returnbut)
 
-        self.footer = Label(text="This project is exclusively made for CNC-314 Database Systems' Course Project - @github.com/37743",
+        self.footer = Label(text="DEPI Microsoft Data Engineer Graduation Project - ONL1_AIS4_M9e - @github.com/37743",
                              color = "##6ee58b",
                              pos_hint={"center_x": .5, "center_y": .04},
                              font_size=11)
