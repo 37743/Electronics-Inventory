@@ -9,3 +9,6 @@ A system for managing the inventory of electronic devices through an website int
 
 ## App:
 <p> The application is developed in python using Kivy framework to simulate the EMS environment and how the users may interact with the encapsulated database throughout a simple GUI. </p>
+
+## Note:
+<p> Kindly make sure to install the pre-requisite packages listed in ~/requirements.txt </p>
