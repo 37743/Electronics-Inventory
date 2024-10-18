@@ -1,5 +1,3 @@
-# Egypt-Japan University of Science and Technology
-# Artificial Intelligence and Data Science Department
 # Inventory Page
 # ---
 # --------
@@ -22,8 +20,7 @@ from app.config.settings import VersionInfo
 from functools import partial
 from kivy.core.window import Window
 
-# Oracle DB
-import cx_Oracle
+import pymssql
 
 connection = None
 
@@ -65,18 +62,18 @@ class Product(BoxLayout, FloatLayout):
         self.spacing = 20
 
         # Product Image
-        self.productimg = Image(source = "app/assets/products/sku_"+str(product[0])+".jpg",
+        self.productimg = Image(source = "app/assets/products/sku_"+str(product['SKU'])+".jpg",
                     pos_hint = {'center_x':.5,'center_y':.5},
                     height = 180,
                     size_hint_y=None)
         # Product Name Label
-        self.productname = Label(text = product[2],
+        self.productname = Label(text = product['product_name'],
                     color = "#2f2f2f",
                     font_size = 16,
                     pos_hint = {'center_x': .5,'center_y':.5},
                     halign = 'center')
         # Price Tag Label
-        self.productprice = Label(text = "Quantity: {q} - Price: £{p}".format(q=product[4],p=product[5]),
+        self.productprice = Label(text = "Quantity: {q} - Price: £{p}".format(q=product['Stock_quantity'],p=product['unit_price']),
                     color = "red",
                     font_size = 16,
                     pos_hint = {'center_x': .5,'center_y':.5},
@@ -102,8 +99,8 @@ class Product(BoxLayout, FloatLayout):
                             "app/assets/empty-icon-down.png")
         addlayout.add_widget(self.addbut)
         self.addbut.bind(on_release=partial(add_released,
-                                            sku=product[0],
-                                            name=str(product[2][:10])+"...",
+                                            sku=product['SKU'],
+                                            name=str(product['product_name'][:10])+"...",
                                             idx=idx))
         # Adding all widgets
         self.add_widget(self.productimg)
@@ -114,19 +111,20 @@ class Product(BoxLayout, FloatLayout):
 class Scroll(ScrollView, FloatLayout):
     def get_products(self):
         global connection
-        connection = cx_Oracle.connect(
-            "EMS",
-            "EMS",
-            "localhost/xe",
-            encoding='UTF-8')
+        connection = pymssql.connect(
+                    host='localhost',
+                    user='Yousef',
+                    password='123',
+                    database='ElectronicsStore',
+                    as_dict=True
+                ) 
         cursor = connection.cursor()
         try:
             cursor.execute("""SELECT * FROM products""")
-            connection.commit()
             results = cursor.fetchall()
             connection.close()
             return results
-        except cx_Oracle.Error as error:
+        except pymssql.Error as error:
             print(error)
 
     def __init__(self, **kwargs):
@@ -137,6 +135,7 @@ class Scroll(ScrollView, FloatLayout):
         # Data Query
         self.productList = []
         for idx,product in enumerate(self.get_products()):
+            print(product)
             currProduct = Product(product, idx)
             self.productList.append(currProduct)
             scrollbox.add_widget(currProduct)
@@ -162,25 +161,36 @@ class Inventory(Screen, FloatLayout):
         global connection
         username = str(App.get_running_app().login.userBox.text).lower()
         password = str(App.get_running_app().login.passBox.text).lower()
-        connection = cx_Oracle.connect(
-            username,
-            password,
-            "localhost/xe",
-            encoding='UTF-8')
+        connection = pymssql.connect(
+                    host='localhost',
+                    user=username,
+                    password=password,
+                    database='ElectronicsStore',
+                    as_dict=True
+        ) 
         cursor = connection.cursor()
         try:
-            cursor.execute("""SELECT retailer_id FROM ems.retailers NATURAL JOIN ems.locations
-                            WHERE REPLACE(LOWER(location_name),' ','_') = :loc""",
-                            loc=self.currUser.text[21:])
+            location_name = self.currUser.text[21:]
+            cursor.execute("""
+                SELECT retailer_id 
+                FROM retailers 
+                INNER JOIN locations ON retailers.location_id = locations.location_id
+                WHERE REPLACE(LOWER(location_name), ' ', '_') = %s
+            """, (location_name,))
+
             retailer_id = cursor.fetchone()[0]
-            cursor.execute("""SELECT * FROM ems.orders
-                           WHERE retailer_id = :ret_id AND order_status = 'Pending'""",
-                           ret_id=retailer_id)
+
+            cursor.execute("""
+                SELECT * 
+                FROM orders 
+                WHERE retailer_id = %s AND order_status = 'Pending'
+            """, (retailer_id,))
+
             retailer_orders = cursor.fetchall()
             connection.commit()
             connection.close()
             Orders(retailer_orders, username, password)
-        except cx_Oracle.Error as error:
+        except pymssql.Error as error:
             print(error)
 
     def change_stock(self):
@@ -189,37 +199,52 @@ class Inventory(Screen, FloatLayout):
         global connection
         username = str(App.get_running_app().login.userBox.text).lower()
         password = str(App.get_running_app().login.passBox.text).lower()
-        connection = cx_Oracle.connect(
-            username,
-            password,
-            "localhost/xe",
-            encoding='UTF-8')
+        connection = pymssql.connect(
+                    host='localhost',
+                    user=username,
+                    password=password,
+                    database='ElectronicsStore',
+                    as_dict=True
+        ) 
         cursor = connection.cursor()
         try:
-            cursor.execute("""SELECT retailer_id FROM ems.retailers NATURAL JOIN ems.locations
-                            WHERE REPLACE(LOWER(location_name),' ','_') = :loc""",
-                            loc=self.currUser.text[21:])
-            retailer_id = cursor.fetchone()[0]
+            location_name = self.currUser.text[21:]
+            cursor.execute("""
+                SELECT retailer_id 
+                FROM retailers 
+                INNER JOIN locations ON retailers.location_id = locations.location_id
+                WHERE REPLACE(LOWER(location_name), ' ', '_') = %s
+            """, (location_name,))
+
+            retailer_id = cursor.fetchone()
+            print(retailer_id)
+
+            cursor.execute("SET IDENTITY_INSERT orders ON;")
+
             for order in self.orders:
-                cursor.execute("""INSERT INTO ems.orders VALUES
-                            (ems.orders_order_id_seq.NEXTVAL, TO_DATE(SYSDATE), :sku, :quantity,
-                            ems.shipments_shipment_id_seq.NEXTVAL, :ret_id, 21,
-                            ems.payments_payment_id_seq.NEXTVAL, :status)""",
-                            sku=order[0],
-                            quantity=order[1],
-                            ret_id=retailer_id,
-                            status='Pending')
-                cursor.execute("""UPDATE ems.products SET stock_quantity = stock_quantity - :quantity
-                                WHERE sku = :sku""",
-                            quantity=order[1],
-                            sku=order[0])
+                sku = order[0]
+                quantity = order[1]
+                
+                cursor.execute("""
+        INSERT INTO orders (order_date, sku, quantity, shipment_id, retailer_id, employee_id, payment_id, order_status)
+        VALUES (GETDATE(), %s, %s,
+                NEXT VALUE FOR shipments_shipment_id_seq, %s, 
+                21, NEXT VALUE FOR ems.payments_payment_id_seq, %s)
+    """, (order[0], order[1], retailer_id, 'Pending'))
+
+                cursor.execute("""
+                    UPDATE products 
+                    SET stock_quantity = stock_quantity - %s
+                    WHERE sku = %s
+                """, (quantity, sku))
+
+            cursor.execute("SET IDENTITY_INSERT orders OFF;")
             self.orders=[]
             widgets = [i for i in self.orderlayout.children]
             for currWidget in widgets:
                 self.orderlayout.remove_widget(currWidget)
-            connection.commit()
             connection.close()
-        except cx_Oracle.Error as error:
+        except pymssql.Error as error:
             print(error)
         return 0
     
@@ -334,7 +359,7 @@ class Inventory(Screen, FloatLayout):
         self.purchasebut.bind(on_release=purchase_released)
         self.add_widget(self.purchasebut)
 
-        self.footer = Label(text="This project is exclusively made for CNC-314 Database Systems' Course Project - @github.com/37743",
+        self.footer = Label(text="DEPI Microsoft Data Engineer Graduation Project - ONL1_AIS4_M9e - @github.com/37743",
                              color = "##6ee58b",
                              pos_hint={"center_x": .4, "center_y": .04},
                              font_size=11)
