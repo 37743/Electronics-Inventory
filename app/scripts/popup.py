@@ -1,5 +1,3 @@
-# Egypt-Japan University of Science and Technology
-# Artificial Intelligence and Data Science Department
 # Popups
 # ---
 # --------
@@ -10,8 +8,10 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
 from kivy.uix.popup import Popup 
 from functools import partial
-import cx_Oracle
+
+import pymssql
 connection = None
+
 class Support():
     def __init__(self, **kwargs):
         boxlayout = BoxLayout(orientation="vertical")
@@ -134,21 +134,32 @@ class Purchased():
         
 def delete_order(instance, obj, item, user, passwd):
     global connection
-    connection = cx_Oracle.connect(
-            user,
-            passwd,
-            "localhost/xe",
-            encoding='UTF-8')
+    connection = pymssql.connect(
+                host='localhost',
+                user='Yousef',
+                password='123',
+                database='ElectronicsStore',
+                as_dict=True
+            ) 
     cursor = connection.cursor()
     try:
-        cursor.execute("""UPDATE ems.products SET stock_quantity = stock_quantity + :q WHERE sku = :p""",
-                        q=item[3],
-                        p=item[2])
-        cursor.execute("""DELETE FROM ems.orders WHERE order_id = :o""",
-                        o=item[0])
+        cursor.execute("""
+            UPDATE ems.products 
+            SET stock_quantity = stock_quantity + @q 
+            WHERE sku = @p
+        """,
+        q=item[3],
+        p=item[2])
+
+        cursor.execute("""
+            DELETE FROM ems.orders 
+            WHERE order_id = @o
+        """,
+        o=item[0])
+        
         connection.commit()
         connection.close()
-    except cx_Oracle.Error as error:
+    except pymssql.Error as error:
         print(error)
     finally:
         obj.remove_widget(instance)

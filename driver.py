@@ -1,5 +1,3 @@
-# Egypt-Japan University of Science and Technology
-# Artificial Intelligence and Data Science Department
 # Electronics Inventory Management System for Suppliers
 # Driver Code
 # ---
@@ -28,15 +26,20 @@ class App(App):
     which controls which interface is shown to the user at a time.'''
     def build(self):
         self.title = settings.VersionInfo.get_title()
-        self.icon = "app/assets/ejust-project-icon.png"
+        self.icon = "app/assets/ieemslogo.png"
         self.about = aboutpage.About(name="About Us Page")
         self.login = loginpage.Login(name="Login Page")
+        self.inventory = inventorypage.Inventory(name="Inventory Page")
         self.signup = signuppage.Signup(name="Signup Page")
         self.apply = applypage.Application(name="Application Page")
-        self.inventory = inventorypage.Inventory(name="Inventory Page")
         self.screen_manager = ScreenManager(transition = WipeTransition())
 
-        for screen in [self.about, self.login, self.inventory, self.signup, self.apply]:
+        for screen in [self.about,
+                       self.login,
+                       self.inventory,
+                       self.signup,
+                       self.apply
+                    ]:
             self.screen_manager.add_widget(screen)
         return self.screen_manager
 

@@ -8,9 +8,9 @@
      needed to be used globally.
      In the event of failure, kindly refer to
      the version info stated in the deployed app.'''
-settings = {"version": "0.2.4",
-            "day": 3,
-            "month": 1,
+settings = {"version": "0.4.4",
+            "day": 12,
+            "month": 10,
             "year": 2024}
 curr_user = "None"
 
