@@ -1,5 +1,4 @@
 # Stakeholder Requirements Specification (StRS) - Electronics Inventory Management System
-**Assigned:** Mohamed Ashraf
 
 ## Stakeholders
 The following are the stakeholders for the electronics inventory management system:

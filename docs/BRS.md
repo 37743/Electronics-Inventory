@@ -1,5 +1,4 @@
 ## Business Requirements Specification (BRS)
-<b> Assigned: </b> Seif Diaa
 
 ### 1. Introduction:
 The purpose of this project is to develop a comprehensive inventory management system for an authorized distributor in the electronics industry. The system will enable efficient tracking and management of inventory, including products, stock levels, and related information. The database will store relevant data about products, manufacturers, orders, and customers, facilitating streamlined inventory operations.

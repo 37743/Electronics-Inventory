@@ -1,5 +1,4 @@
 ## System Operational Concept (OpsCon)
-<b> Assigned: </b> Seif Diaa
 
 <p> The system operational concept outlines how the proposed electronics inventory database system will function and interact with different users and components. It describes the core operations and interactions within the system to provide a comprehensive understanding of its functionality. The following is a high-level overview of the system operational concept: </p>
 
